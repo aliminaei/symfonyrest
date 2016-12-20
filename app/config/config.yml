@@ -80,7 +80,12 @@ nelmio_cors:
         max_age: 3600
         hosts: []
         origin_regex: false
- 
+
+# Nelmio API Doc Configuration
+nelmio_api_doc:
+    sandbox:
+        enabled:  true
+
 # FOSRest Configuration
 fos_rest:
     body_listener: true
