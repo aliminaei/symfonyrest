@@ -4,16 +4,18 @@ namespace AppBundle\Adapter;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-use AppBundle\Common\HttpHandler;
+use AppBundle\Handler\HttpHandler;
 
 class GithubAdapter
 {
 
-    private $container;    
+    private $apiUsername;    
+    private $apiToken;    
 
-    public function __construct(ContainerInterface $container)
+    public function __construct($apiUsername, $apiToken)
     {
-        $this->container = $container;
+        $this->apiUsername = $apiUsername;
+        $this->apiToken = $apiToken;
     }
 
     /**
@@ -34,8 +36,8 @@ class GithubAdapter
         //I'm using my personal github account for a basic authentication as the request limits for anonymous callers are too low.
         $contributorsURL = sprintf(
             "https://%s:%s@api.github.com/repos/%s/contributors", 
-            $this->container->getParameter('github.api.username'), 
-            $this->container->getParameter('github.api.token'), 
+            $this->apiUsername, 
+            $this->apiToken, 
             $repoName);
 
         // echo $contributorsURL."\n";

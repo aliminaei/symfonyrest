@@ -2,7 +2,7 @@
     
 namespace AppBundle\Adapter;
 
-use AppBundle\Common\HttpHandler;
+use AppBundle\Handler\HttpHandler;
 
 class PackagistAdapter
 {

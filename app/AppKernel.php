@@ -19,6 +19,7 @@ class AppKernel extends Kernel
             new JMS\SerializerBundle\JMSSerializerBundle(),
             new Nelmio\ApiDocBundle\NelmioApiDocBundle(),
             new Nelmio\CorsBundle\NelmioCorsBundle(),
+            new Mmoreram\RSQueueBundle\RSQueueBundle(),
             new AppBundle\AppBundle(),
         ];
 

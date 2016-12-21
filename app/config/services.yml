@@ -9,3 +9,13 @@ services:
        arguments:
             - "@doctrine.orm.entity_manager"
 
+   github_adapter:
+       class: AppBundle\Adapter\GithubAdapter
+       arguments:
+            - '%github.api.username%'
+            - '%github.api.token%'
+
+   packagist_adapter:
+       class: AppBundle\Adapter\PackagistAdapter
+       arguments:
+
