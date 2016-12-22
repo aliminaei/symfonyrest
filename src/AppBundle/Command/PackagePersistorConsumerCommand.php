@@ -71,26 +71,48 @@ class PackagePersistorConsumerCommand extends ConsumerCommand
         }
 
         $packageName = $payload["package_name"];
-        $repoURL = $payload["repo_url"];
+        $repoUrl = $payload["repo_url"];
         $contributors = $payload["contributors"];
+
+        $package = $this->savePackage($packageName, $repoUrl);
 
         $output->writeln(print_r($contributors, true));
     }
 
-    protected function saveContributors($contributors)
+    protected function saveContributors($names, $package)
     {
-        foreach ($contributors as $contributor) {
-            $this->saveContributor($contributor);
+        foreach ($names as $name) {
+            $contributor = $this->saveContributor($name, $package);
         }
     }
 
-    protected function saveContributor($name)
+    protected function saveContributor($name, $package)
     {
-        
+        $contributor = $this->entityManager->getRepository('AppBundle\Entity\Contributor')->findOneByName($name)
+        if (!$contributor)
+        {
+            $contributor = new Contributor();
+            $contributor->setName($name);
+            $contributor->setPackages([$package]);
+        }
+        else
+        {
+            $packages = $contributor->getPackages();
+            $packages[] = $package;
+            $contributor->setPackages($packages);
+        }
+        return $contributor;
     }
 
-    protected function savePackage($packageName, $repoURL, $contributors)
+    protected function savePackage($packageName, $repoUrl)
     {
-
+        $package = $this->entityManager->getRepository('AppBundle\Entity\Package')->findOneByName($packageName)
+        if (!$package)
+        {
+            $package = new Package();
+            $package->setName($packageName);
+            $package->setRepoUrl($repoUrl);
+        }
+        return $package;
     }
 }

@@ -78,12 +78,12 @@ class PackageParserConsumerCommand extends ConsumerCommand
 
         $packageName = $payload["package_name"];
 
-        $repoURL = $this->packagistAdapter->getPackageGithubURL($packageName);
-        $contributors = $this->githubAdapter->getContributors($repoURL);
+        $repoUrl = $this->packagistAdapter->getPackageGithubURL($packageName);
+        $contributors = $this->githubAdapter->getContributors($repoUrl);
 
         $data = [
             "package_name" => $packageName,
-            "repo_url" => $repoURL,
+            "repo_url" => $repoUrl,
             "contributors" => $contributors
         ];
         $this->queueProducer->produce("persistor", $data);
