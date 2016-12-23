@@ -71,24 +71,33 @@ class PackagePersistorConsumerCommand extends ConsumerCommand
         }
 
         $packageName = $payload["package_name"];
-        $repoUrl = $payload["repo_url"];
-        $contributors = $payload["contributors"];
+        $contributorsUrl = $payload["contributors_url"];
+        $githubNames = $payload["contributors"];
 
-        $package = $this->savePackage($packageName, $repoUrl);
+        $package = $this->savePackage($packageName, $contributorsUrl);
+        $contributors = $this->saveContributors($githubNames, $package);
+        $package->setContributors($contributors);
+        $this->entityManager->persist($package);
+        $this->entityManager->flush();
 
         $output->writeln(print_r($contributors, true));
     }
 
     protected function saveContributors($names, $package)
     {
-        foreach ($names as $name) {
+        $contributors = [];
+        foreach ($names as $name) 
+        {
             $contributor = $this->saveContributor($name, $package);
+            $contributors[] = $contributor;
         }
+
+        return $contributors;
     }
 
     protected function saveContributor($name, $package)
     {
-        $contributor = $this->entityManager->getRepository('AppBundle\Entity\Contributor')->findOneByName($name)
+        $contributor = $this->entityManager->getRepository('AppBundle\Entity\Contributor')->findOneByName($name);
         if (!$contributor)
         {
             $contributor = new Contributor();
@@ -98,20 +107,22 @@ class PackagePersistorConsumerCommand extends ConsumerCommand
         else
         {
             $packages = $contributor->getPackages();
-            $packages[] = $package;
+            array_push($packages, $package);
             $contributor->setPackages($packages);
         }
+        $this->entityManager->persist($contributor);
         return $contributor;
     }
 
-    protected function savePackage($packageName, $repoUrl)
+    protected function savePackage($packageName, $contributorsUrl)
     {
-        $package = $this->entityManager->getRepository('AppBundle\Entity\Package')->findOneByName($packageName)
+        $package = $this->entityManager->getRepository('AppBundle\Entity\Package')->findOneByName($packageName);
         if (!$package)
         {
             $package = new Package();
             $package->setName($packageName);
-            $package->setRepoUrl($repoUrl);
+            $package->setContributorsUrl($contributorsUrl);
+            $this->entityManager->persist($package);
         }
         return $package;
     }

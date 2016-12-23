@@ -31,9 +31,9 @@ class Package
     /**
      * @var string
      *
-     * @ORM\Column(name="repo_url", type="text", nullable=true)
+     * @ORM\Column(name="contributors_url", type="text", nullable=true)
      */
-    private $repoUrl;
+    private $contributorsUrl;
 
     /**
      * @var array
@@ -78,27 +78,27 @@ class Package
     }
 
     /**
-     * Set repoUrl
+     * Set contributorsUrl
      *
-     * @param string $repoUrl
+     * @param string $contributorsUrl
      *
      * @return Package
      */
-    public function setRepoUrl($repoUrl)
+    public function setContributorsUrl($contributorsUrl)
     {
-        $this->repoUrl = $repoUrl;
+        $this->contributorsUrl = $contributorsUrl;
 
         return $this;
     }
 
     /**
-     * Get repoUrl
+     * Get contributorsUrl
      *
      * @return string
      */
-    public function getRepoUrl()
+    public function getContributorsUrl()
     {
-        return $this->repoUrl;
+        return $this->contributorsUrl;
     }
 
     /**

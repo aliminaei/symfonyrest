@@ -79,11 +79,29 @@ class PackageParserConsumerCommand extends ConsumerCommand
         $packageName = $payload["package_name"];
 
         $repoUrl = $this->packagistAdapter->getPackageGithubURL($packageName);
-        $contributors = $this->githubAdapter->getContributors($repoUrl);
+
+        //Extracting repo name from the repo URL
+        $repoName = str_replace('https://github.com/', '', $repoUrl);
+
+        //Building the API URL fro getting contributors
+        //I'm using my personal github account for a basic authentication as the request limits for anonymous callers are too low.
+        $contributorsUrl = sprintf(
+            "https://%s:%s@api.github.com/repos/%s/contributors", 
+            $this->apiUsername, 
+            $this->apiToken, 
+            $repoName);
+
+        $contributors = $this->githubAdapter->getContributors($contributorsUrl);
+
+        if (count($contributors) < 1)
+        {
+            $this->logger->warn('Package "'.$packageName.'" has no contributors!');
+            return;
+        }
 
         $data = [
             "package_name" => $packageName,
-            "repo_url" => $repoUrl,
+            "contributors_url" => $contributorsUrl,
             "contributors" => $contributors
         ];
         $this->queueProducer->produce("persistor", $data);

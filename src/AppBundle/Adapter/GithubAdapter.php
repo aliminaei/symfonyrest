@@ -25,24 +25,11 @@ class GithubAdapter
      *
      * @return array - array of string containing all github usernames contributed to the package
      */
-    public function getContributors($repoUrl)
+    public function getContributors($contributorsUrl)
     {
         $contributors = array();
 
-        //Extracting repo name from the repo URL
-        $repoName = str_replace('https://github.com/', '', $repoUrl);
-
-        //Building the API URL fro getting contributors
-        //I'm using my personal github account for a basic authentication as the request limits for anonymous callers are too low.
-        $contributorsURL = sprintf(
-            "https://%s:%s@api.github.com/repos/%s/contributors", 
-            $this->apiUsername, 
-            $this->apiToken, 
-            $repoName);
-
-        // echo $contributorsURL."\n";
-
-        $response = HttpHandler::HttpGetRequest($contributorsURL);
+        $response = HttpHandler::HttpGetRequest($contributorsUrl);
         $responseJson = (array)json_decode($response);
 
         if (!isset( $responseJson['message']))
