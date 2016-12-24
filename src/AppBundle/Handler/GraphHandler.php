@@ -31,7 +31,9 @@ class GraphHandler
      */
     public function getShortestPath($user1, $user2)
     {
-        return "Not Connected";
+        $package = $this->entityManager->getRepository('AppBundle:Package')->findOneBy(['id' => 2]);
+        $contributors = $package->getContributors();
+        return $contributors;
     }
 
 

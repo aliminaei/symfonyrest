@@ -30,13 +30,13 @@ class APIController extends FOSRestController
      */
     public function shortestPathAction($user1, $user2)
     {
-        $data = [
-            "package_name" => "00f100/cakephp-opauth"
-        ];
-        $this->container->get("rs_queue.producer")->produce("crawler", $data);
+        // $data = [
+        //     "package_name" => "00f100/cakephp-opauth"
+        // ];
+        // $this->container->get("rs_queue.producer")->produce("crawler", $data);
         $graphHandler = $this->get("graph_handler");
         $message = $graphHandler->getShortestPath($user1, $user2);
-        return new JsonResponse(array("message"=> $message), 404);
+        return new JsonResponse(array("message"=> $contributors), 404);
     }
 
     /**

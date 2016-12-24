@@ -6,6 +6,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Mmoreram\RSQueueBundle\Command\ConsumerCommand;
 use Doctrine\ORM\EntityManager;
+use AppBundle\Entity\Package;
+use AppBundle\Entity\Contributor;
 
 /**
  * Testing consumer command
@@ -79,8 +81,6 @@ class PackagePersistorConsumerCommand extends ConsumerCommand
         $package->setContributors($contributors);
         $this->entityManager->persist($package);
         $this->entityManager->flush();
-
-        $output->writeln(print_r($contributors, true));
     }
 
     protected function saveContributors($names, $package)

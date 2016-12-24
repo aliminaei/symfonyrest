@@ -86,9 +86,7 @@ class PackageParserConsumerCommand extends ConsumerCommand
         //Building the API URL fro getting contributors
         //I'm using my personal github account for a basic authentication as the request limits for anonymous callers are too low.
         $contributorsUrl = sprintf(
-            "https://%s:%s@api.github.com/repos/%s/contributors", 
-            $this->apiUsername, 
-            $this->apiToken, 
+            "https://api.github.com/repos/%s/contributors", 
             $repoName);
 
         $contributors = $this->githubAdapter->getContributors($contributorsUrl);
@@ -105,7 +103,5 @@ class PackageParserConsumerCommand extends ConsumerCommand
             "contributors" => $contributors
         ];
         $this->queueProducer->produce("persistor", $data);
-
-        $output->writeln(print_r($contributors, true));
     }
 }
