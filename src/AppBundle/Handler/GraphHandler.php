@@ -20,6 +20,11 @@ class GraphHandler
         $this->entityManager = $entityManager;
     }
 
+    public function createGraph()
+    {
+        
+    }
+
     /**
      * Retrives the shortest path between the two contributors.
      * 
@@ -31,9 +36,10 @@ class GraphHandler
      */
     public function getShortestPath($user1, $user2)
     {
-        $package = $this->entityManager->getRepository('AppBundle:Package')->findOneBy(['id' => 2]);
-        $contributors = $package->getContributors();
-        return $contributors;
+        $package = $this->entityManager->getRepository('AppBundle:Package')->findOneBy(['name' => '00f100/cakephp-opauth']);
+
+        if($package) return $package->getContributors()->map(function($item) { return $item->getName(); })->toArray();
+        else return [];
     }
 
 

@@ -1,3 +1,8 @@
+build_graph:
+    path:     /build_graph
+    defaults: { _controller: AppBundle:GraphBuilder:buildGraph }
+    methods:  [GET]
+
 shortest_path:
     path:     /api/path/{user1}/{user2}
     defaults: { _controller: AppBundle:API:shortestPath }

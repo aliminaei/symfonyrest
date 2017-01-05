@@ -29,7 +29,7 @@ class GithubAdapter
     {
         $contributors = array();
 
-        $response = HttpHandler::HttpGetRequest($contributorsUrl);
+        $response = HttpHandler::HttpGetRequest($contributorsUrl, $this->apiUsername, $this->apiToken);
         $responseJson = (array)json_decode($response);
 
         if (!isset( $responseJson['message']))

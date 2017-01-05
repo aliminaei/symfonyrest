@@ -16,6 +16,7 @@ class PackagePersistorConsumerCommand extends ConsumerCommand
 {
     protected $entityManager;
     protected $logger;
+    protected $batchSize = 50;
 
     /**
      * Configuration method
@@ -38,6 +39,7 @@ class PackagePersistorConsumerCommand extends ConsumerCommand
         $this->entityManager = $this->getContainer()->get('doctrine')->getManager();
         $this->logger = $this->getContainer()->get('logger');
         $this->addQueue('persistor', 'persistPackage');
+        $this->logger->error('HERE!!');
     }
 
     /**
@@ -76,11 +78,18 @@ class PackagePersistorConsumerCommand extends ConsumerCommand
         $contributorsUrl = $payload["contributors_url"];
         $githubNames = $payload["contributors"];
 
+        $output->writeln($packageName);
+
         $package = $this->savePackage($packageName, $contributorsUrl);
-        $contributors = $this->saveContributors($githubNames, $package);
-        $package->setContributors($contributors);
+        foreach ($githubNames as $name) 
+        {
+            $contributor = $this->saveContributor($name);
+            $package->addContributor($contributor);
+        }
+
         $this->entityManager->persist($package);
         $this->entityManager->flush();
+        $this->entityManager->clear();
     }
 
     protected function saveContributors($names, $package)
@@ -95,20 +104,13 @@ class PackagePersistorConsumerCommand extends ConsumerCommand
         return $contributors;
     }
 
-    protected function saveContributor($name, $package)
+    protected function saveContributor($name)
     {
         $contributor = $this->entityManager->getRepository('AppBundle\Entity\Contributor')->findOneByName($name);
         if (!$contributor)
         {
             $contributor = new Contributor();
             $contributor->setName($name);
-            $contributor->setPackages([$package]);
-        }
-        else
-        {
-            $packages = $contributor->getPackages();
-            array_push($packages, $package);
-            $contributor->setPackages($packages);
         }
         $this->entityManager->persist($contributor);
         return $contributor;
