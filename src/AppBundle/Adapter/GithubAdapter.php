@@ -25,15 +25,31 @@ class GithubAdapter
      *
      * @return array - array of string containing all github usernames contributed to the package
      */
-    public function getContributors($contributorsUrl)
+    public function parseContributors($contributorsUrl)
     {
         $contributors = array();
 
-        $response = HttpHandler::HttpGetRequest($contributorsUrl, $this->apiUsername, $this->apiToken);
-        $responseJson = (array)json_decode($response);
+        $options = array('auth' => array($this->apiUsername, $this->apiToken));
+        $request = Requests::get($contributorsUrl, [], $options);
 
-        if (!isset( $responseJson['message']))
+        if ($request->status_code == 403)
         {
+            if ($request->headers['X-RateLimit-Remaining'] == '0')
+            {
+                $rateLimitReset = $request->headers['X-RateLimit-Reset'];
+                $responseJson = json_decode($request->body);
+                $response = [
+                    "ack" => "Error",
+                    "error_message" => $responseJson['message'],
+                    "rate_limit_reset" => $$rateLimitReset
+                ];
+
+                return $response;
+            }
+        }
+        elseif ($request->status_code == 200) {
+            $responseJson = (array)json_decode($request->body);
+
             foreach ($responseJson as $contributor) 
             {
                 try
@@ -45,8 +61,23 @@ class GithubAdapter
                     //Perhaps we have reached our limit for github API requests!!! Or the repository does not exists anymore!!!
                 }
             }
+
+            $response = [
+                "ack" => "OK",
+                "contributors" => $contributors
+            ];
+            return $response;
         }
-        return $contributors;
+        else
+        {
+            $response = [
+                "ack" => "Error",
+                "error_message" => "Unknown Error"
+            ];
+
+            return $response;
+        }
+        
     }
 
     public function getTopRankedUsers()

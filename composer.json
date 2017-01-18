@@ -32,7 +32,8 @@
         "jms/serializer-bundle": "^1.1",
         "nelmio/cors-bundle": "^1.4",
         "nelmio/api-doc-bundle": "^2.13",
-        "mmoreram/rsqueue-bundle": "^1.2"
+        "mmoreram/rsqueue-bundle": "^1.2",
+        "rmccue/requests": "^1.7"
     },
     "require-dev": {
         "sensio/generator-bundle": "^3.0",

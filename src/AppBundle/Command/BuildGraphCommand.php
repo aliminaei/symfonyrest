@@ -19,10 +19,10 @@ class BuildGraphCommand extends ContainerAwareCommand{
     {
         $packagistAdapter = $this->getContainer()->get("packagist_adapter");
         $packageNames = $packagistAdapter->getPackageNames();
-        foreach ($packageNames as $packageName)
-        // for ($i=0; $i < 300; $i++)
+        // foreach ($packageNames as $packageName)
+        for ($i=0; $i < 80; $i++)
         {
-            // $packageName = $packageNames[$i];
+            $packageName = $packageNames[$i];
             $data = [
                 "package_name" => $packageName
             ];

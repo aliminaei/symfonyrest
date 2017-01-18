@@ -6,6 +6,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Mmoreram\RSQueueBundle\Command\ConsumerCommand;
 use Doctrine\ORM\EntityManager;
+use rmccue\requests;
+use \DateTime;
 
 /**
  * Testing consumer command
@@ -89,19 +91,51 @@ class PackageParserConsumerCommand extends ConsumerCommand
             "https://api.github.com/repos/%s/contributors", 
             $repoName);
 
-        $contributors = $this->githubAdapter->getContributors($contributorsUrl);
+        // $options = array('auth' => array($this->apiUsername, $this->apiToken));
+        $request = \Requests::get($contributorsUrl, [], []);
 
-        if (count($contributors) < 1)
+        if ($request->status_code == 200)
         {
-            $this->logger->warn('Package "'.$packageName.'" has no contributors!');
-            return;
-        }
+            $responseJson = (array)json_decode($request->body);
+            $contributors = array();
 
-        $data = [
-            "package_name" => $packageName,
-            "contributors_url" => $contributorsUrl,
-            "contributors" => $contributors
-        ];
-        $this->queueProducer->produce("persistor", $data);
+            foreach ($responseJson as $contributor) 
+            {
+                try
+                {
+                    $contributors[] = $contributor->login;
+                }
+                catch (\Exception $e)
+                {
+                    $this->logger->error("Unknown error while parsing contributors for '".$packageName."' with url => '".$contributorsUrl."'");
+                }
+            }
+
+            if (count($contributors) < 1)
+            {
+                $this->logger->warn('Package "'.$packageName.'" has no contributors!');
+                return;
+            }
+
+            $data = [
+                "package_name" => $packageName,
+                "contributors_url" => $contributorsUrl,
+                "contributors" => $contributors
+            ];
+            $this->queueProducer->produce("persistor", $data);
+        }
+        elseif ($request->status_code == 403)
+        {
+            if ($request->headers['X-RateLimit-Remaining'] == '0')
+            {
+                $rateLimitReset = $request->headers['X-RateLimit-Reset'];
+                $dt = new DateTime("@$rateLimitReset");
+                $this->logger->error("API rate limit exceeded! waiting until: ".$dt->format('Y-m-d H:i:s'));
+            }
+        }
+        else
+        {
+            $this->logger->error("Unknown error while parsing contributors for '".$packageName."' with url => '".$contributorsUrl."'");
+        }
     }
 }
