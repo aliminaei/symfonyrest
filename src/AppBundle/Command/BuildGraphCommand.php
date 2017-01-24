@@ -7,6 +7,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use rmccue\requests;
 
 class BuildGraphCommand extends ContainerAwareCommand{
 
@@ -17,8 +18,22 @@ class BuildGraphCommand extends ContainerAwareCommand{
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $packagistAdapter = $this->getContainer()->get("packagist_adapter");
-        $packageNames = $packagistAdapter->getPackageNames();
+        $packageNames = [];
+
+        $getPackagesResponse = \Requests::get("https://packagist.org/packages/list.json", [], []);
+        if ($getPackagesResponse->status_code == 200)
+        {
+            $responseJson = json_decode($getPackagesResponse->body);
+            try
+            {
+                $packageNames = $responseJson->packageNames;
+            }
+            catch(\Exception $e)
+            {
+                $packageNames = [];
+            }
+        }
+
         // foreach ($packageNames as $packageName)
         for ($i=0; $i < 80; $i++)
         {

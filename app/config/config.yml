@@ -7,8 +7,6 @@ imports:
 # http://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
     locale: en
-    github.api.username: "aliminaei"
-    github.api.token: "b7e8c3f2e5c4687cd1aa5753f7058b904722fd2b"
 
 framework:
     #esi:             ~

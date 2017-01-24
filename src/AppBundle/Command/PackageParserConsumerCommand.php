@@ -16,8 +16,6 @@ class PackageParserConsumerCommand extends ConsumerCommand
 {
     protected $entityManager;
     protected $logger;
-    protected $packagistAdapter;
-    protected $githubAdapter;
     protected $queueProducer;
 
     /**
@@ -27,7 +25,9 @@ class PackageParserConsumerCommand extends ConsumerCommand
     {
         $this
             ->setName('package_crawler:process')
-            ->setDescription('Package parser consumer command');
+            ->setDescription('Package parser consumer command')
+            ->addArgument("api_username")
+            ->addArgument('api_token');
         ;
 
         parent::configure();
@@ -40,8 +40,6 @@ class PackageParserConsumerCommand extends ConsumerCommand
     {
         $this->entityManager = $this->getContainer()->get('doctrine')->getManager();
         $this->logger = $this->getContainer()->get('logger');
-        $this->packagistAdapter = $this->getContainer()->get("packagist_adapter");
-        $this->githubAdapter = $this->getContainer()->get("github_adapter");
         $this->queueProducer = $this->getContainer()->get("rs_queue.producer");
         $this->addQueue('crawler', 'processPackage');
     }
@@ -78,25 +76,49 @@ class PackageParserConsumerCommand extends ConsumerCommand
             return;
         }
 
+        //reading the github api username and token for github API call. Github has rate limit for API calls and the limit for anonymous users is 60 call per hour.
+        //We can start this command by passing different api credentials to be able to build the database faster!
+        $apiUsername = "";
+        $apiToken = "";
+        try
+        {
+            $apiUsername = $input->getArgument('api_username');
+        }
+        catch(\Exception $e)
+        {
+            $apiUsername = "";
+        }
+
+        try
+        {
+            $apiToken = $input->getArgument('api_token');
+        }
+        catch(\Exception $e)
+        {
+            $apiToken = "";
+        }
+        
         $packageName = $payload["package_name"];
 
-        $repoUrl = $this->packagistAdapter->getPackageGithubURL($packageName);
-
-        //Extracting repo name from the repo URL
-        $repoName = str_replace('https://github.com/', '', $repoUrl);
-
-        //Building the API URL fro getting contributors
-        //I'm using my personal github account for a basic authentication as the request limits for anonymous callers are too low.
+        //Building the API URL for getting contributors
         $contributorsUrl = sprintf(
             "https://api.github.com/repos/%s/contributors", 
-            $repoName);
+            $packageName);
+        
 
-        // $options = array('auth' => array($this->apiUsername, $this->apiToken));
-        $request = \Requests::get($contributorsUrl, [], []);
-
-        if ($request->status_code == 200)
+        if ($apiUsername == "" || $apiToken == "")
         {
-            $responseJson = (array)json_decode($request->body);
+            $options = [];
+        }
+        else
+        {
+            $options = array('auth' => array($apiUsername, $apiToken));
+        }
+        $parseContributorsResponse = \Requests::get($contributorsUrl, [], $options);
+
+        if ($parseContributorsResponse->status_code == 200)
+        {
+            $responseJson = (array)json_decode($parseContributorsResponse->body);
             $contributors = array();
 
             foreach ($responseJson as $contributor) 
@@ -116,26 +138,47 @@ class PackageParserConsumerCommand extends ConsumerCommand
                 $this->logger->warn('Package "'.$packageName.'" has no contributors!');
                 return;
             }
-
-            $data = [
-                "package_name" => $packageName,
-                "contributors_url" => $contributorsUrl,
-                "contributors" => $contributors
-            ];
-            $this->queueProducer->produce("persistor", $data);
+            $this->logger->info("Adding package '".$packageName. "' to the persistor queue.");
+            $this->addPackageToThePersistorQueue($packageName, $contributorsUrl, $contributors);
         }
-        elseif ($request->status_code == 403)
+        elseif ($parseContributorsResponse->status_code == 403)
         {
-            if ($request->headers['X-RateLimit-Remaining'] == '0')
+            if ($parseContributorsResponse->headers['X-RateLimit-Remaining'] == '0')
             {
-                $rateLimitReset = $request->headers['X-RateLimit-Reset'];
-                $dt = new DateTime("@$rateLimitReset");
-                $this->logger->error("API rate limit exceeded! waiting until: ".$dt->format('Y-m-d H:i:s'));
+                $rateLimitReset = $parseContributorsResponse->headers['X-RateLimit-Reset'];
+                $resetTime = new DateTime("@$rateLimitReset");
+                $currentTime = new DateTime();
+                $interval = $resetTime->diff($currentTime);
+                $waitTime = $interval->h * 3600 + $interval->i * 60 + $interval->s;
+                
+                $this->logger->info("Adding package '".$packageName. "' to the crawler queue again as we we reached our github api limit and we could not process this package.");
+                $this->addPackageToTheCrawlerQueue($packageName);
+
+                $this->logger->error("API rate limit exceeded! Have to wait for ".$waitTime. " seconds!");
+                sleep($waitTime);
             }
         }
         else
         {
             $this->logger->error("Unknown error while parsing contributors for '".$packageName."' with url => '".$contributorsUrl."'");
         }
+    }
+
+    protected function addPackageToTheCrawlerQueue($packageName)
+    {
+        $data = [
+            "package_name" => $packageName
+        ];
+        $this->queueProducer->produce("crawler", $data);
+    }
+
+    protected function addPackageToThePersistorQueue($packageName, $contributorsUrl, $contributors)
+    {
+        $data = [
+            "package_name" => $packageName,
+            "contributors_url" => $contributorsUrl,
+            "contributors" => $contributors
+        ];
+        $this->queueProducer->produce("persistor", $data);
     }
 }
