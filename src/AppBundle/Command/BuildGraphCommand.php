@@ -34,10 +34,10 @@ class BuildGraphCommand extends ContainerAwareCommand{
             }
         }
 
-        // foreach ($packageNames as $packageName)
-        for ($i=0; $i < 80; $i++)
+        foreach ($packageNames as $packageName)
+        // for ($i=0; $i < 80; $i++)
         {
-            $packageName = $packageNames[$i];
+            // $packageName = $packageNames[$i];
             $data = [
                 "package_name" => $packageName
             ];
